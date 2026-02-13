@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ar">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة ميمي ❤️</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Cairo', Arial, sans-serif;
+            color: white;
+            text-align: center;
+            overflow: hidden;
+            background: #1a0a2a;
+        }
+
+        /* خلفية القلوب */
+        .hearts {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .heart {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: pink;
+            transform: rotate(45deg);
+            animation: float 12s infinite linear;
+            opacity: 0.8;
+        }
+
+        .heart:before,
+        .heart:after {
+            content: '';
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: pink;
+            border-radius: 50%;
+        }
+
+        .heart:before {
+            top: -12.5px;
+            left: 0;
+        }
+
+        .heart:after {
+            left: -12.5px;
+            top: 0;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(45deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-10vh) rotate(45deg);
+                opacity: 0;
+            }
+        }
+
+        /* شاشة البداية */
+        #startScreen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #startScreen h1 {
+            font-size: 40px;
+            margin-bottom: 10px;
+            color: #ff6b9a;
+        }
+
+        #startScreen button {
+            padding: 15px 50px;
+            font-size: 22px;
+            border: none;
+            border-radius: 15px;
+            background: linear-gradient(45deg, #ff6b9a, #ff4d6d);
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #startScreen button:hover {
+            transform: scale(1.1);
+        }
+
+        /* اللعبة */
+        #game {
+            display: none;
+            padding: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        /* تصميم جديد للبوكس: قلب داخل دائرة وردية */
+        .box {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle at 30% 30%, #ff4d6d, #ff1a50);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .box:hover {
+            transform: scale(1.15) rotate(-5deg);
+        }
+
+        .box span {
+            font-size: 24px;
+        }
+
+        /* الرسالة */
+        .message {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 25px;
+            border-radius: 15px;
+            display: none;
+            font-size: 22px;
+            max-width: 80%;
+        }
+
+        /* النهاية */
+        #endScreen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-size: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- القلوب -->
+    <div class="hearts" id="hearts"></div>
+
+    <!-- شاشة البداية -->
+    <div id="startScreen">
+        <h1>ميمي ❤️</h1>
+        <p>لعبة حب بسيطة… عيشي المشاعر</p>
+        <button onclick="startGame()">ابدئي</button>
+    </div>
+
+    <!-- اللعبة -->
+    <div id="game">
+        <h2>دوري بين القلوب يا ميمي</h2>
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <!-- الرسالة -->
+    <div class="message" id="popup"></div>
+
+    <!-- النهاية -->
+    <div id="endScreen">
+        <h1>ميمي ❤️</h1>
+        <p>أحبك موت… وكل يوم أحبك أكثر</p>
+    </div>
+
+    <!-- الأصوات -->
+    <audio id="bgMusic" loop>
+        <source src="song.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="voice1" src="voice1.mp3"></audio>
+    <audio id="voice2" src="voice2.mp3"></audio>
+    <audio id="voice3" src="voice3.mp3"></audio>
+
+    <script>
+        let words = [
+            "ميمي أحبك", "يا عمري انتي", "اشتقت لك موت", "وجودك يريح قلبي",
+            "أحب سوالفك", "أحب ضحكتك يا ميمي", "أنتي دنيتي", "أبيك معي طول العمر",
+            "أحب دلعك", "يا بعد روحي", "قلبي ملكك", "أحب كل لحظة وياك",
+            "يا ملاكي", "أنتي فرحتي", "أنتي حياتي", "أحب رقتك", "ميمي قلبي",
+            "أحبك من كل قلبي", "أنتي سعادتي", "يا غلاي"
+        ];
+
+        let voiceBoxes = [5, 12, 25];
+        let music = document.getElementById("bgMusic");
+
+        function startGame() {
+            document.getElementById("startScreen").style.display = "none";
+            document.getElementById("game").style.display = "block";
+            music.volume = 0.3; // الصوت الأساسي خفيف طول الوقت
+            music.play();
+            createBoxes();
+        }
+
+        function createBoxes() {
+            let grid = document.getElementById("grid");
+            for (let i = 0; i < 50; i++) {
+                let box = document.createElement("div");
+                box.className = "box";
+                box.innerHTML = "<span>❤️</span>";
+                box.onclick = function () {
+                    if (voiceBoxes.includes(i)) {
+                        playVoice(i);
+                    } else {
+                        showWord();
+                    }
+                }
+                grid.appendChild(box);
+            }
+        }
+
+        function showWord() {
+            let randomWord = words[Math.floor(Math.random() * words.length)];
+            let popup = document.getElementById("popup");
+            popup.innerText = randomWord;
+            popup.style.display = "block";
+            setTimeout(() => { popup.style.display = "none"; }, 1800);
+        }
+
+        function playVoice(i) {
+            let popup = document.getElementById("popup");
+            popup.innerText = "اسمعي مشاعرنا 💖";
+            popup.style.display = "block";
+
+            // خفف صوت الأغنية الأساسية أكثر وقت الفويس
+            music.volume = 0.1; // خفيف جدًا
+            let voice;
+            if (i === 5) voice = document.getElementById("voice1");
+            if (i === 12) voice = document.getElementById("voice2");
+            if (i === 25) voice = document.getElementById("voice3");
+
+            // الفويس عالي جدًا
+            voice.volume = 1;
+            voice.play();
+
+            // بعد ما يخلص الفويس → الأغنية ترجع لصوتها الطبيعي
+            voice.onended = function () {
+                music.volume = 0.3;
+                popup.style.display = "none";
+            }
+        }
+
+        function createHearts() {
+            let heartsContainer = document.getElementById("hearts");
+            for (let i = 0; i < 40; i++) {
+                let heart = document.createElement("div");
+                heart.className = "heart";
+                heart.style.left = Math.random() * 100 + "%";
+                heart.style.animationDuration = (5 + Math.random() * 6) + "s";
+                heartsContainer.appendChild(heart);
+            }
+        }
+        createHearts();
+
+        // النهاية بعد 90 ثانية
+        setTimeout(() => {
+            document.getElementById("endScreen").style.display = "flex";
+        }, 90000);
+    </script>
+</body>
+
+</html>
